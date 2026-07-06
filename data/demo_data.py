@@ -7,7 +7,8 @@ import pandas as pd
 random.seed(42)
 
 SOURCES = ["LinkedIn inbound", "LinkedIn outbound", "Reseau CHU", "Reseau Ministeres",
-           "Malt", "BOAMP / marche public", "Recommandation", "Sovereign Career"]
+           "Malt", "BOAMP / marche public", "Recommandation", "Sovereign Career",
+           "Recherche annuaire"]
 
 STATUTS = ["Nouveau", "Contacte", "Call planifie", "Proposition envoyee",
            "Negociation", "Gagne", "Perdu"]

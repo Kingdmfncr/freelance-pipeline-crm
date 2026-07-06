@@ -82,7 +82,8 @@ with st.sidebar:
         "</div>", unsafe_allow_html=True)
     st.markdown(f"<hr style='border-color:{C_BORDER};'>", unsafe_allow_html=True)
 
-    page = st.radio("Navigation", ["Dashboard", "Relances du jour", "Prospects", "Ajouter un prospect"],
+    page = st.radio("Navigation", ["Dashboard", "Relances du jour", "Prospects",
+                                   "Recherche entreprise", "Ajouter un prospect"],
                     label_visibility="collapsed")
 
     st.markdown(f"<hr style='border-color:{C_BORDER};'>", unsafe_allow_html=True)
@@ -191,6 +192,22 @@ elif page == "Prospects":
         st.success("Pipeline enregistre.")
     st.download_button("Exporter CSV", df.to_csv(index=False).encode("utf-8"),
                        "pipeline.csv", "text/csv")
+
+# ── Recherche entreprise ──────────────────────────────────────────────────────
+elif page == "Recherche entreprise":
+    import research
+
+    def _add_to_pipeline(org, secteur, offre):
+        new = {"organisation": org, "secteur": secteur, "contact": "",
+               "source": "Recherche annuaire", "offre": offre,
+               "valeur_eur": VALEURS.get(offre, 0), "statut": "Nouveau",
+               "date_creation": today, "dernier_contact": today,
+               "prochaine_relance": today + timedelta(days=7), "notes": ""}
+        st.session_state.prospects = pd.concat(
+            [st.session_state.prospects, pd.DataFrame([new])], ignore_index=True)
+        save_prospects(st.session_state.prospects)
+
+    research.render(_add_to_pipeline)
 
 # ── Ajouter ───────────────────────────────────────────────────────────────────
 else:
