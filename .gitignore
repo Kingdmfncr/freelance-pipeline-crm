@@ -2,3 +2,5 @@ __pycache__/
 *.pyc
 .env
 data/prospects.csv
+data/messages.csv
+data/projets.csv

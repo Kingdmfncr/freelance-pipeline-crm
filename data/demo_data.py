@@ -48,6 +48,7 @@ def generate_prospects(n: int = 14) -> pd.DataFrame:
         delai = 3 if statut in ("Proposition envoyee", "Negociation", "Call planifie") else 7
         relance = last_contact + timedelta(days=delai)
         rows.append({
+            "id": i + 1,
             "organisation": org,
             "secteur": secteur,
             "contact": _CONTACTS[i],
@@ -61,3 +62,61 @@ def generate_prospects(n: int = 14) -> pd.DataFrame:
             "notes": "",
         })
     return pd.DataFrame(rows)
+
+
+CANAUX = ["Email", "LinkedIn", "Telephone", "Visio", "En personne"]
+
+TACHES_TYPES = {
+    "Audit Data Flash": ["Cartographie des flux", "Diagnostic gisements", "Rapport + roadmap", "Restitution"],
+    "Sprint Outil 30 jours": ["Cadrage besoin", "Connexion donnees", "Dev outil (demo J+7)",
+                              "Formation utilisateurs", "Support post-livraison"],
+    "PMO Data mensuel": ["Revue KPIs du mois", "Maintenance outils", "Nouveaux indicateurs", "Reporting direction"],
+}
+
+
+def generate_messages(prospects_df: pd.DataFrame, n_per: int = 3) -> pd.DataFrame:
+    rows = []
+    msg_id = 1
+    for _, p in prospects_df.iterrows():
+        n = random.randint(1, n_per)
+        d = p["date_creation"]
+        for k in range(n):
+            d = d + timedelta(days=random.randint(1, 6))
+            if d > date.today():
+                break
+            rows.append({
+                "id": msg_id, "prospect_id": p["id"], "organisation": p["organisation"],
+                "date": d, "canal": random.choice(CANAUX),
+                "resume": random.choice([
+                    "Premier contact, presentation de l'offre",
+                    "Envoi de la proposition commerciale",
+                    "Relance suite a silence",
+                    "Point d'avancement projet",
+                    "Question technique sur perimetre",
+                    "Confirmation de rendez-vous",
+                ]),
+            })
+            msg_id += 1
+    return pd.DataFrame(rows)
+
+
+PROJETS_COLS = ["id", "prospect_id", "organisation", "offre", "tache", "echeance", "statut"]
+
+
+def generate_projets(prospects_df: pd.DataFrame) -> pd.DataFrame:
+    gagnes = prospects_df[prospects_df["statut"] == "Gagne"]
+    rows = []
+    proj_id = 1
+    for _, p in gagnes.iterrows():
+        taches = TACHES_TYPES.get(p["offre"], ["Cadrage", "Realisation", "Livraison"])
+        debut = p["dernier_contact"]
+        for j, t in enumerate(taches):
+            statut = random.choices(["A faire", "En cours", "Termine"], weights=[1, 1, 2])[0]
+            rows.append({
+                "id": proj_id, "prospect_id": p["id"], "organisation": p["organisation"],
+                "offre": p["offre"], "tache": t,
+                "echeance": debut + timedelta(days=(j + 1) * 6),
+                "statut": statut,
+            })
+            proj_id += 1
+    return pd.DataFrame(rows, columns=PROJETS_COLS)

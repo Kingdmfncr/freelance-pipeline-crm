@@ -6,7 +6,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from data.demo_data import generate_prospects, STATUTS, PROBAS, SOURCES, OFFRES, VALEURS
+from data.demo_data import (generate_prospects, generate_messages, generate_projets,
+                            STATUTS, PROBAS, SOURCES, OFFRES, VALEURS)
 
 C_PRIMARY  = "#00C896"
 C_GOLD     = "#F5C842"
@@ -31,7 +32,10 @@ CHART_DEFAULTS = dict(
 )
 
 OBJECTIF_MENSUEL = 6000
-CSV_PATH = os.path.join(os.path.dirname(__file__), "data", "prospects.csv")
+DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+CSV_PATH = os.path.join(DATA_DIR, "prospects.csv")
+MSG_PATH = os.path.join(DATA_DIR, "messages.csv")
+PROJ_PATH = os.path.join(DATA_DIR, "projets.csv")
 DATE_COLS = ["date_creation", "dernier_contact", "prochaine_relance"]
 
 st.set_page_config(page_title="Freelance Pipeline CRM", page_icon="🎯",
@@ -56,6 +60,8 @@ def load_prospects() -> pd.DataFrame:
         for c in DATE_COLS:
             df[c] = pd.to_datetime(df[c]).dt.date
         df["notes"] = df["notes"].fillna("")
+        if "id" not in df.columns:
+            df.insert(0, "id", range(1, len(df) + 1))
         return df
     df = generate_prospects()
     df.to_csv(CSV_PATH, index=False)
@@ -66,8 +72,46 @@ def save_prospects(df: pd.DataFrame) -> None:
     df.to_csv(CSV_PATH, index=False)
 
 
+def next_id(df: pd.DataFrame) -> int:
+    return int(df["id"].max()) + 1 if len(df) else 1
+
+
+def load_messages(prospects_df: pd.DataFrame) -> pd.DataFrame:
+    if os.path.exists(MSG_PATH):
+        m = pd.read_csv(MSG_PATH)
+        m["date"] = pd.to_datetime(m["date"]).dt.date
+        return m
+    m = generate_messages(prospects_df)
+    m.to_csv(MSG_PATH, index=False)
+    return m
+
+
+def save_messages(df: pd.DataFrame) -> None:
+    st.session_state.messages = df
+    df.to_csv(MSG_PATH, index=False)
+
+
+def load_projets(prospects_df: pd.DataFrame) -> pd.DataFrame:
+    if os.path.exists(PROJ_PATH):
+        p = pd.read_csv(PROJ_PATH)
+        p["echeance"] = pd.to_datetime(p["echeance"]).dt.date
+        return p
+    p = generate_projets(prospects_df)
+    p.to_csv(PROJ_PATH, index=False)
+    return p
+
+
+def save_projets(df: pd.DataFrame) -> None:
+    st.session_state.projets = df
+    df.to_csv(PROJ_PATH, index=False)
+
+
 if "prospects" not in st.session_state:
     st.session_state.prospects = load_prospects()
+if "messages" not in st.session_state:
+    st.session_state.messages = load_messages(st.session_state.prospects)
+if "projets" not in st.session_state:
+    st.session_state.projets = load_projets(st.session_state.prospects)
 
 df = st.session_state.prospects
 today = date.today()
@@ -83,7 +127,8 @@ with st.sidebar:
     st.markdown(f"<hr style='border-color:{C_BORDER};'>", unsafe_allow_html=True)
 
     page = st.radio("Navigation", ["Dashboard", "Relances du jour", "Prospects",
-                                   "Recherche entreprise", "Ajouter un prospect"],
+                                   "Recherche entreprise", "Messagerie", "Clients & Projets",
+                                   "Ajouter un prospect"],
                     label_visibility="collapsed")
 
     st.markdown(f"<hr style='border-color:{C_BORDER};'>", unsafe_allow_html=True)
@@ -198,8 +243,8 @@ elif page == "Recherche entreprise":
     import research
 
     def _add_to_pipeline(org, secteur, offre):
-        new = {"organisation": org, "secteur": secteur, "contact": "",
-               "source": "Recherche annuaire", "offre": offre,
+        new = {"id": next_id(st.session_state.prospects), "organisation": org, "secteur": secteur,
+               "contact": "", "source": "Recherche annuaire", "offre": offre,
                "valeur_eur": VALEURS.get(offre, 0), "statut": "Nouveau",
                "date_creation": today, "dernier_contact": today,
                "prochaine_relance": today + timedelta(days=7), "notes": ""}
@@ -208,6 +253,16 @@ elif page == "Recherche entreprise":
         save_prospects(st.session_state.prospects)
 
     research.render(_add_to_pipeline)
+
+# ── Messagerie ────────────────────────────────────────────────────────────────
+elif page == "Messagerie":
+    import messaging
+    messaging.render(df, st.session_state.messages, save_messages)
+
+# ── Clients & Projets ─────────────────────────────────────────────────────────
+elif page == "Clients & Projets":
+    import clients
+    clients.render(df, st.session_state.projets, save_projets)
 
 # ── Ajouter ───────────────────────────────────────────────────────────────────
 else:
@@ -223,7 +278,7 @@ else:
         valeur = st.number_input("Valeur estimee (€)", value=VALEURS[OFFRES[0]], step=100)
         notes = st.text_area("Notes", height=80)
         if st.form_submit_button("Ajouter au pipeline") and org:
-            new = {"organisation": org, "secteur": secteur, "contact": contact,
+            new = {"id": next_id(df), "organisation": org, "secteur": secteur, "contact": contact,
                    "source": source, "offre": offre, "valeur_eur": valeur,
                    "statut": "Nouveau", "date_creation": today,
                    "dernier_contact": today, "prochaine_relance": today + timedelta(days=7),
