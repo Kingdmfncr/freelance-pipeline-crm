@@ -58,7 +58,7 @@ def _reco(secteur: str, tranche: str) -> dict:
             "argument": "Gouvernance des donnees, fiabilisation des reportings reglementaires",
             "contacts": ["DGS / SG", "Directeur de la transformation", "Chef de projet data"],
             "canal": "Email officiel (marches publics : voir BOAMP) — LinkedIn en second",
-            "demo": "https://change-onboarding-tracker.streamlit.app",
+            "demo": "https://change-onboardin-tracker.streamlit.app",
         }
     return {
         "offre": "Sprint Outil 30 jours" if moyenne or grande else "Audit Data Flash",
