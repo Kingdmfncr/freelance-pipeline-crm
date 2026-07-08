@@ -9,10 +9,10 @@ from data.demo_data import CANAUX
 
 C_PRIMARY = "#00C896"
 C_GOLD    = "#F5C842"
-C_SURF    = "#14141C"
-C_TEXT    = "#F0F0F5"
-C_MUTED   = "#6B7280"
-C_BORDER  = "#2A2A3E"
+C_SURF    = "#FFFFFF"
+C_TEXT    = "#1D1D1F"
+C_MUTED   = "#6E6E73"
+C_BORDER  = "#E8E8ED"
 
 CANAL_ICONS = {"Email": "✉️", "LinkedIn": "💼", "Telephone": "📞", "Visio": "🎥", "En personne": "🤝"}
 

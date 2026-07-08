@@ -1,0 +1,103 @@
+{
+  "name": "Veille Freelance — BOAMP + Malt",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "cronExpression", "expression": "0 7 * * 1-5" }] }
+      },
+      "name": "Cron 7h (jours ouvres)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [200, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://boamp-datadila.opendatasoft.com/api/records/1.0/search/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "dataset", "value": "boamp" },
+            { "name": "q", "value": "gouvernance données OR qualité données OR data steward OR système d'information" },
+            { "name": "rows", "value": "20" },
+            { "name": "sort", "value": "-dateparution" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "GET BOAMP (API officielle)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 140]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst out = [];\nconst KEYWORDS = ['data', 'donnée', 'gouvernance', 'qualité', 'système d\\'information', 'ia', 'intelligence artificielle'];\n\nfor (const item of items) {\n  const rec = item.json.record?.fields || item.json;\n  const objet = (rec.objet || rec.object_marche || '').toLowerCase();\n  if (!KEYWORDS.some(k => objet.includes(k))) continue;\n\n  out.push({\n    json: {\n      organisation: rec.nomacheteur || rec.acheteur_nom || 'Organisme inconnu',\n      secteur: 'Secteur public',\n      source: 'boamp',\n      offre: 'Audit Data Flash',\n      valeur_estimee: null,\n      currency: 'EUR',\n      contact_name: '',\n      objet_marche: rec.objet || '',\n      lien: rec.url_avis || '',\n    }\n  });\n}\nreturn out;"
+      },
+      "name": "Filtrer mots-cles pertinents",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 140]
+    },
+    {
+      "parameters": {
+        "pollTimes": { "item": [{ "mode": "everyMinute" }] },
+        "simple": false,
+        "filters": {
+          "sender": "alertes@malt.fr",
+          "readStatus": "unread"
+        }
+      },
+      "name": "Gmail — Alertes Malt",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [420, 340],
+      "notes": "Necessite d'avoir configure une recherche sauvegardee sur Malt qui envoie des alertes email a l'adresse Gmail connectee. AUCUN scraping du site Malt (contraire aux CGU)."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraction simple depuis le corps de l'email d'alerte Malt.\n// Ajuster les regex selon le format reel recu (a affiner apres 1er email recu).\nconst items = $input.all();\nconst out = [];\nfor (const item of items) {\n  const body = item.json.text || item.json.snippet || '';\n  const orgMatch = body.match(/(?:chez|pour)\\s+([A-Z][\\w\\s&-]{2,40})/);\n  out.push({\n    json: {\n      organisation: orgMatch ? orgMatch[1].trim() : 'Mission Malt a qualifier',\n      secteur: 'Prive / Autre',\n      source: 'malt',\n      offre: 'Sprint Outil 30 jours',\n      valeur_estimee: null,\n      currency: 'EUR',\n      contact_name: '',\n    }\n  });\n}\nreturn out;"
+      },
+      "name": "Extraire infos mission",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 340]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.KAMI_API_URL}}/api/commercial/ingest",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-API-Key", "value": "={{$env.KAMI_INGEST_KEY}}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { workspace_id: $env.KAMI_FREELANCE_WORKSPACE_ID, ...($json) } }}"
+      },
+      "name": "POST vers KAMI /commercial/ingest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 240]
+    }
+  ],
+  "connections": {
+    "Cron 7h (jours ouvres)": {
+      "main": [[{ "node": "GET BOAMP (API officielle)", "type": "main", "index": 0 }]]
+    },
+    "GET BOAMP (API officielle)": {
+      "main": [[{ "node": "Filtrer mots-cles pertinents", "type": "main", "index": 0 }]]
+    },
+    "Filtrer mots-cles pertinents": {
+      "main": [[{ "node": "POST vers KAMI /commercial/ingest", "type": "main", "index": 0 }]]
+    },
+    "Gmail — Alertes Malt": {
+      "main": [[{ "node": "Extraire infos mission", "type": "main", "index": 0 }]]
+    },
+    "Extraire infos mission": {
+      "main": [[{ "node": "POST vers KAMI /commercial/ingest", "type": "main", "index": 0 }]]
+    }
+  }
+}

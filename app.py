@@ -13,11 +13,11 @@ C_PRIMARY  = "#00C896"
 C_GOLD     = "#F5C842"
 C_DANGER   = "#E85D5D"
 C_WARNING  = "#F5A623"
-C_SURF     = "#14141C"
-C_SURF2    = "#1E1E2E"
-C_TEXT     = "#F0F0F5"
-C_MUTED    = "#6B7280"
-C_BORDER   = "#2A2A3E"
+C_SURF     = "#FFFFFF"
+C_SURF2    = "#EDEDF2"
+C_TEXT     = "#1D1D1F"
+C_MUTED    = "#6E6E73"
+C_BORDER   = "#E8E8ED"
 
 STATUT_COLORS = {
     "Nouveau": C_MUTED, "Contacte": "#5B8DEF", "Call planifie": C_GOLD,
@@ -44,12 +44,12 @@ st.set_page_config(page_title="Freelance Pipeline CRM", page_icon="🎯",
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-html, body, [class*="css"] { font-family: 'Inter', sans-serif; background-color: #0A0A0F; color: #F0F0F5; }
-.stApp { background-color: #0A0A0F; }
-section[data-testid="stSidebar"] { background-color: #14141C; border-right: 1px solid #2A2A3E; }
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; background-color: #F5F5F7; color: #1D1D1F; }
+.stApp { background-color: #F5F5F7; }
+section[data-testid="stSidebar"] { background-color: #FFFFFF; border-right: 1px solid #E8E8ED; }
 div[data-testid="stMetricValue"] { color: #00C896; font-size: 1.8rem; font-weight: 700; }
-.stButton button { background-color: #00C896; color: #0A0A0F; border: none; border-radius: 8px; font-weight: 600; }
-.stTabs [aria-selected="true"] { background-color: #1E1E2E; color: #F0F0F5; }
+.stButton button { background-color: #00C896; color: #F5F5F7; border: none; border-radius: 8px; font-weight: 600; }
+.stTabs [aria-selected="true"] { background-color: #EDEDF2; color: #1D1D1F; }
 </style>
 """, unsafe_allow_html=True)
 
