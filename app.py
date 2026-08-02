@@ -127,8 +127,8 @@ with st.sidebar:
     st.markdown(f"<hr style='border-color:{C_BORDER};'>", unsafe_allow_html=True)
 
     page = st.radio("Navigation", ["Dashboard", "Relances du jour", "Prospects",
-                                   "Recherche entreprise", "Messagerie", "Clients & Projets",
-                                   "Ajouter un prospect"],
+                                   "Recherche entreprise", "Radar Normandie", "Messagerie",
+                                   "Clients & Projets", "Ajouter un prospect"],
                     label_visibility="collapsed")
 
     st.markdown(f"<hr style='border-color:{C_BORDER};'>", unsafe_allow_html=True)
@@ -253,6 +253,22 @@ elif page == "Recherche entreprise":
         save_prospects(st.session_state.prospects)
 
     research.render(_add_to_pipeline)
+
+# ── Radar Normandie ───────────────────────────────────────────────────────────
+elif page == "Radar Normandie":
+    import radar_normandie
+
+    def _add_to_pipeline_radar(org, secteur, offre):
+        new = {"id": next_id(st.session_state.prospects), "organisation": org, "secteur": secteur,
+               "contact": "", "source": "Radar Normandie", "offre": offre,
+               "valeur_eur": VALEURS.get(offre, 0), "statut": "Nouveau",
+               "date_creation": today, "dernier_contact": today,
+               "prochaine_relance": today + timedelta(days=7), "notes": ""}
+        st.session_state.prospects = pd.concat(
+            [st.session_state.prospects, pd.DataFrame([new])], ignore_index=True)
+        save_prospects(st.session_state.prospects)
+
+    radar_normandie.render(_add_to_pipeline_radar)
 
 # ── Messagerie ────────────────────────────────────────────────────────────────
 elif page == "Messagerie":
